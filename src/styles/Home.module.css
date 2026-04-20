@@ -1,0 +1,28 @@
+.homePage {
+  min-height: 100vh;
+}
+
+/* Hero */
+.hero {
+  height: 80vh;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+/* CTA */
+.cta {
+  background: linear-gradient(135deg, #000000, #434343);
+  color: white;
+}
+
+/* Feature cards */
+.featureCard {
+  transition: all 0.3s ease;
+  background: white;
+  border-radius: 16px;
+}
+
+.featureCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
