@@ -2,46 +2,69 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+const API = "http://localhost:4000/products";
+
 const ProductsComponent = () => {
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetch("http://localhost:4000/products")
-      .then((res) => res.json())
-      .then((data) => {
-        setItems(data);
-        setLoading(false);
-      })
-      .catch((err) => console.error("Fetch error:", err));
-  }, []);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Delete this product?")) {
-      await fetch(`http://localhost:4000/products/${id}`, {
-        method: "DELETE",
-      });
-      setItems(items.filter((item) => item.id !== id));
+  const fetchProducts = async (url = API) => {
+    try {
+      setLoading(true);
+      const res = await fetch(url);
+
+      if (!res.ok) throw new Error("Failed to fetch");
+
+      const data = await res.json();
+      setItems(data);
+    } catch (err) {
+      setError("❌ Failed to load products");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleFilter = async (category) => {
-    let url = "http://localhost:4000/products";
-    if (category !== "all") url += `?category=${category}`;
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-    const res = await fetch(url);
-    const data = await res.json();
-    setItems(data);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this product?")) return;
+
+    try {
+      const res = await fetch(`${API}/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error();
+
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      alert("Delete failed ❌");
+    }
   };
 
+  const handleFilter = (category) => {
+    if (category === "all") {
+      fetchProducts();
+    } else {
+      fetchProducts(`${API}?category=${category}`);
+    }
+  };
+
+
   const filteredItems = items.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    item.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="container py-5">
-      {/* 🔥 Header */}
+
+  
       <div className="d-flex flex-column flex-lg-row justify-content-between align-items-center mb-5 gap-3">
         <h2 className="fw-bold">🛍️ Our Collection</h2>
 
@@ -70,19 +93,29 @@ const ProductsComponent = () => {
         </div>
       </div>
 
-      {/* 🔄 Loading */}
-      {loading ? (
+
+      {loading && (
         <div className="text-center py-5">
           <div className="spinner-border text-dark"></div>
         </div>
-      ) : (
+      )}
+
+
+      {error && (
+        <div className="alert alert-danger text-center">
+          {error}
+        </div>
+      )}
+
+
+      {!loading && !error && (
         <div className="row g-4">
           {filteredItems.length > 0 ? (
-            filteredItems.map((p, index) => (
+            filteredItems.map((p) => (
               <div key={p.id} className="col-md-6 col-lg-4 col-xl-3">
                 <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden product-card">
-                  
-                  {/* 🖼️ Image */}
+
+
                   <div
                     className="position-relative bg-light"
                     style={{ height: "220px" }}
@@ -100,17 +133,19 @@ const ProductsComponent = () => {
                     </span>
                   </div>
 
-                  {/* 📄 Content */}
+
                   <div className="card-body d-flex flex-column">
                     <small className="text-muted text-uppercase mb-1">
                       {p.category}
                     </small>
 
-                    <h6 className="fw-bold text-truncate">{p.title}</h6>
+                    <h6 className="fw-bold text-truncate">
+                      {p.title}
+                    </h6>
 
                     <p className="text-muted small flex-grow-1">
-  {p.description ? p.description.slice(0, 60) : "No description"}...
-</p>
+                      {(p.description || "No description").slice(0, 60)}...
+                    </p>
 
                     <div className="d-flex gap-2 mt-auto">
                       <Link
@@ -128,6 +163,7 @@ const ProductsComponent = () => {
                       </button>
                     </div>
                   </div>
+
                 </div>
               </div>
             ))
